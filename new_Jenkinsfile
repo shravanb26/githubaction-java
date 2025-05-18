@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('git checkout') {
+            steps {
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/CharanReddy129/Java_maven_Project.git'
+            }
+        }
+        stage('maven build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('docker build and push') {
+            environment {
+                DOCKER_IMAGE = "charanreddy12/java_maven:${BUILD_NUMBER}"
+            }
+            steps{
+                withDockerRegistry(credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/') {
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                    sh 'docker push ${DOCKER_IMAGE}'
+                }
+            }
+        }
+        stage('push code to git') {
+            environment {
+                GITHUB_CREDENTIALS = credentials('github_pat')
+                GIT_USER_NAME = "CharanReddy129"
+                GIT_REPO_NAME = "Java_maven_Project"
+            }
+            steps {
+                sh '''
+                    git config --global user.email "charangajulapalli2001@gmail.com"
+                    git config --global user.name "charan"
+                    sed -i "s|charanreddy12/java_maven:.*|charanreddy12/java_maven:${BUILD_NUMBER}|g" k8s_manifests/deployment.yml
+                    git commit -am "updating the image tag to ${BUILD_NUMBER} in deployment.yml file"
+                    git push https://${GITHUB_CREDENTIALS}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main 
+                '''
+            }
+        }
+    }
+}
+

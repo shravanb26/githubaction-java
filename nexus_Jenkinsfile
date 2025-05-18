@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven3'
+    }
+
+    stages {
+        stage('checkOut') {
+            steps {
+                git branch: 'main', url: 'https://github.com/CharanReddy129/Java_maven_Project.git'
+            }
+        }
+        stage("code complie") {
+            steps {
+                sh"mvn compile"
+            }
+        }
+        stage("unit test") {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage("build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage("deploy artifact to nexus") {
+            steps {
+                withMaven(globalMavenSettingsConfig: 'settings.xml', jdk: 'jdk21', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
+                    sh "mvn deploy"
+                }
+            }
+        }
+    }
+}
+

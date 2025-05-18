@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: maven-application
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/CharanReddy129/Java_maven_Project.git
+    path: k8s_manifests
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: maven 
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

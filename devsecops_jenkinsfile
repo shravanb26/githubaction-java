@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    
+    tools {
+        maven 'maven3'
+    }
+    
+    environment {
+        SONAR_HOST_URL = 'http://172.30.85.64:9000/'
+        SONAR_SCANNER = tool 'sonarscanner'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/CharanReddy129/Java_maven_Project.git'
+            }
+        }
+        stage('compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+        stage('sonar scan') {
+            steps {
+                withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_LOGIN')]) {
+                    withSonarQubeEnv('sonarqube') {
+                        sh '''
+                        ${SONAR_SCANNER}/bin/sonar-scanner \
+                            -Dsonar.projectKey=jenkins \
+                            -Dsonar.sources=/usr/src \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.login=${SONAR_LOGIN}
+                        '''
+                    }
+                }
+            }
+        }
+        stage('trivy scan'){
+            steps {
+                sh 'trivy repo .'
+            }
+        }
+        stage('build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+    }
+    post {
+        success {
+            echo 'pipeline is successful'
+        }
+        
+        failure {
+            echo 'pipeline is failed!'
+        }
+    }
+}
