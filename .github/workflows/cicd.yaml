@@ -1,7 +1,9 @@
 name: implementing cicd pipeline
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+  #workflow_dispatch:
 jobs:
   compile:
     runs-on: ubuntu-latest
